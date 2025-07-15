@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #chatbot-window {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        #chatbot-window.open {
+            transform: translateY(0);
+        }
+        .chat-message {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .active {
+            background-color: #2563eb !important; 
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Widget Button -->
+    <button id="chatbot-toggle" class="fixed bottom-4 right-4 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700">
+        💬 Chat 
+    </button>
+
+    <!-- Chatbot Window -->
+    <div id="chatbot-window" class="fixed bottom-0 right-4 w-80 bg-white rounded-lg shadow-xl overflow-hidden hidden">
+        <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+            <h2 class="text-lg font-semibold">FAQ Chatbot</h2>
+            <button id="chatbot-close" class="text-white hover:text-gray-200">✕</button>
+        </div>
+        <p>Hello! I am Niyantrabot &#129302; What can I help today?</p>
+        <br>
+        <p>You can simply type your Questions or select from the options below.😊</p>
+        <div class="p-4 chat-message">
+            <!-- Categories -->
+            <div id="categories" class="space-y-2">
+                <h3 class="font-bold text-gray-700">Select Categories</h3>
+                <div id="category-list" class="space-y-1"></div>
+            </div>
+            <!-- Subcategories -->
+            <div id="subcategories" class="space-y-2 hidden">
+                <h3 class="font-bold text-gray-700">Select Subcategories</h3>
+                <div id="subcategory-list" class="space-y-1"></div>
+            </div>
+            <!-- Options -->
+            <div id="options" class="space-y-2 hidden">
+                <h3 class="font-bold text-gray-700">Select Options</h3>
+                <div id="option-list" class="space-y-1"></div>
+            </div>
+            <!-- Questions -->
+            <div id="questions" class="space-y-2 hidden">
+                <h3 class="font-bold text-gray-700">Select Questions</h3>
+                <div id="question-list" class="space-y-1"></div>
+            </div>
+            <!-- Answer -->
+            <div id="answer" class="mt-4 hidden">
+                <h3 class="font-bold text-gray-700">Your Answer</h3>
+                <p id="answer-text" class="text-gray-600"></p>
+            </div>
+        </div>
+        <!-- Input Area -->
+        <div class="p-4 border-t">
+            <input id="user-input" type="text" placeholder="Type your question...😊" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600">
+            <button id="send-question" class="mt-2 w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const database = {
+            "CCSP": {
+                "General Introduction": {
+                    "CCSP Definition": {
+                        "What is CCSP and why is it important?": "",
+                        "Is CCSP specific to IR-NIYANTRAC or used elsewhere too?": "",
+                        "What does it mean that CCSP supports multiple verticals?": ""
+                    }
+                },
+                "CCSP Services": {
+                    "Common Service Functions (CSFs)": {
+                        "What are Common Service Functions (CSFs) in CCSP?": "",
+                        "Do I need to implement these CSFs on my device?": "",
+                        "What is the benefit of having these CSFs?": ""
+                    },
+                    "Interworking and Connectivity": {
+                        "Does CCSP support devices using NB-IoT or Non-IP protocols?": "",
+                        "What is the MN or ASN in CCSP architecture?": "",
+                        "What is an SSP and how does it affect my device?": ""
+                    },
+                    "Data and Device Management": {
+                        "What is a Flex Container and why is it used in CCSP?": "",
+                        "How does CCSP support device management protocols?": "",
+                        "Who manages the device configurations on CCSP?": ""
+                    }
+                },
+                "CCSP Benefits": {
+                    "Benefits for Vendors": {
+                        "Why is CCSP useful for application providers like us?": "",
+                        "Can we integrate our dashboard or system with CCSP?": "",
+                        "Does CCSP ensure interoperability across different vendors?": ""
+                    }
+                }
+            },
+            "oneM2M": {
+                "OneM2M basics": {
+                    "OneM2M for Beginner": {
+                        "Where can I learn the basics of oneM2M if I’m new to it?": "",
+                        "What is an AE-ID and why is it needed in the oneM2M structure?": "",
+                        "What is the significance of container and contentInstance in oneM2M?": "",
+                        "How do subscriptions work in oneM2M?": "",
+                        "What role does the App-ID registry play in oneM2M?": "",
+                        "Are there any tools to simulate oneM2M messages for testing?": "",
+                        "Can I send oneM2M-compliant messages from any device or is certification required?": ""
+                    }
+                }
+            },
+            "IR-NIYANTRAC": {
+                "Vendor Onboarding": {
+                    "App-ID Registration": {
+                        "After registering, do I need to inform anyone?": "",
+                        "I submitted the App-ID but didn’t save the confirmation. How do I retrieve it?": "",
+                        "Should I wait for approval, or can I proceed after registering?": "",
+                        "Where can I check the status of my App-ID registration?": "",
+                        "I submitted my App-ID incorrectly — what should I do?": "",
+                        "Can I reuse the same App-ID for multiple devices?": ""
+                    },
+                    "Sending Details to SSE / Vendor Configuration": {
+                        "Whom do I send my vendor details to after App-ID registration?": "",
+                        "I sent the details to the SSE, but haven’t received a reply — what now?": "",
+                        "How long does it take for the SSE to respond or configure my IFD?": "",
+                        "I received the LoA, but I don’t know the correct SSE contact. What should I do?": ""
+                    }
+                },
+                "Device Onboarding": {
+                    "Configuration File & IFD Info": {
+                        "I received a config file — where do I find instructions to use it?": "",
+                        "What exactly is in the config file, and how do I interpret it?": "",
+                        "How do I confirm my configuration file is the required one?": "",
+                        "I lost the original config file — can the SSE re-send it?": "",
+                        "My device model doesn’t match the config — will it cause issues?": ""
+                    },
+                    "Pre-Testing & COI Setup": {
+                        "How do I request access to the COI (test) infrastructure?": "",
+                        "Who initiates the mail to C-DOT for test infra access — me or CRIS?": "",
+                        "How long after CRIS sends the mail will I get test access?": "",
+                        "Can I test multiple IFDs on the same COI setup?": "",
+                        "Is my vendor config on COI different from production?": ""
+                    },
+                    "Certificate Generation (Clause 16)": {
+                        "Where do I find the steps to generate my device SSL certificate?": "",
+                        "I wrongly filled the certificate fields — can I regenerate it?": "",
+                        "Do I need to use a specific tool to generate the CSR?": "",
+                        "My certificate file is in .pem — is that okay?": "",
+                        "Where do I upload the certificate after generating?": "",
+                        "My certificate got signed but it’s not working — what should I check?": "",
+                        "What’s the difference between root CA and device certificate?": "",
+                        "How do I install the certificate on my IFD?": ""
+                    },
+                    "Connectivity & Message Errors": {
+                        "Which documentation should I refer to for connecting to the broker?": "",
+                        "I got a TLS handshake failure — what could be wrong?": "",
+                        "My MQTT client gives 'connection refused' — what should I check?": "",
+                        "I connected but no data is going through — what can I debug?": "",
+                        "My device shows 'broker not reachable' — what can I do?": ""
+                    },
+                    "Understanding resource hierarchy": {
+                        "Container and Subscription Creation": {
+                            "How do I know which containers I must create and which are already created?": "",
+                            "Are there any orders in which I should create the containers and subscriptions - where should I refer for them?": "",
+                            "I created a container but it is not visible in the resource hierarchy — what’s wrong?": "",
+                            "Where can I verify the container/subscription creation on the CCSP portal?": "",
+                            "The subscription was accepted but no notifications are coming — whom should I contact?": "",
+                            "Can I delete a container and recreate it?": "",
+                            "While viewing the resourceTree it shows “Unexpected Error Occurred, Contact Administrator” - what should I do now?": ""
+                        }
+                    },
+                    "Understanding message flow": {
+                        "Payload and Communication Format": {
+                            "Where can I find example payloads?": "",
+                            "My payload structure gives '400 Bad request' — which guide should I refer to?": "",
+                            "Should the timestamps in payloads be in UTC?": "",
+                            "I sent a CI but it’s not reflected on the resourceTreeViewer — how do I debug it?": "",
+                            "I am having a hard time creating payloads with values - what should I refer to better understand the attributes in payload?": ""
+                        }
+                    }
+                }
+            }
+        };
+
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const chatbotWindow = document.getElementById('chatbot-window');
+        const chatbotClose = document.getElementById('chatbot-close');
+        const categoryList = document.getElementById('category-list');
+        const subcategoryList = document.getElementById('subcategory-list');
+        const optionList = document.getElementById('option-list');
+        const questionList = document.getElementById('question-list');
+        const answerSection = document.getElementById('answer');
+        const answerText = document.getElementById('answer-text');
+        const userInput = document.getElementById('user-input');
+        const sendQuestion = document.getElementById('send-question');
+        const subcategoriesSection = document.getElementById('subcategories');
+        const optionsSection = document.getElementById('options');
+        const questionsSection = document.getElementById('questions');
+
+        
+        chatbotToggle.addEventListener('click', () => {
+            chatbotWindow.classList.toggle('hidden');
+            chatbotWindow.classList.toggle('open');
+        });
+
+        chatbotClose.addEventListener('click', () => {
+            chatbotWindow.classList.add('hidden');
+            chatbotWindow.classList.remove('open');
+            resetChatbot();
+        });
+
+       
+        function resetChatbot() {
+            subcategoriesSection.classList.add('hidden');
+            optionsSection.classList.add('hidden');
+            questionsSection.classList.add('hidden');
+            answerSection.classList.add('hidden');
+            subcategoryList.innerHTML = '';
+            optionList.innerHTML = '';
+            questionList.innerHTML = '';
+            answerText.textContent = '';
+            
+            document.querySelectorAll('.active').forEach(btn => btn.classList.remove('active'));
+        }
+
+      
+        function populateCategories() {
+            categoryList.innerHTML = '';
+            Object.keys(database).forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-2 bg-gray-200 rounded hover:bg-gray-300';
+                button.textContent = category;
+                button.addEventListener('click', () => {
+                    // Remove active class from other category buttons
+                    categoryList.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    populateSubcategories(category);
+                });
+                categoryList.appendChild(button);
+            });
+        }
+
+       
+        function populateSubcategories(category) {
+            resetChatbot();
+            subcategoriesSection.classList.remove('hidden');
+            subcategoryList.innerHTML = '';
+            Object.keys(database[category]).forEach(subcategory => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-2 bg-gray-200 rounded hover:bg-gray-300';
+                button.textContent = subcategory;
+                button.addEventListener('click', () => {
+                    // Remove active class from other subcategory buttons
+                    subcategoryList.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    populateOptions(category, subcategory);
+                });
+                subcategoryList.appendChild(button);
+            });
+        }
+
+        function populateOptions(category, subcategory) {
+            optionsSection.classList.remove('hidden');
+            optionList.innerHTML = '';
+            Object.keys(database[category][subcategory]).forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-2 bg-gray-200 rounded hover:bg-gray-300';
+                button.textContent = option;
+                button.addEventListener('click', () => {
+                    // Remove active class from other option buttons
+                    optionList.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    populateQuestions(category, subcategory, option);
+                });
+                optionList.appendChild(button);
+            });
+        }
+
+
+        function populateQuestions(category, subcategory, option) {
+            questionsSection.classList.remove('hidden');
+            questionList.innerHTML = '';
+            Object.keys(database[category][subcategory][option]).forEach(question => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-2 bg-gray-200 rounded hover:bg-gray-300';
+                button.textContent = question;
+                button.addEventListener('click', () => {
+                    // Remove active class from other question buttons
+                    questionList.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    fetchAnswer([category, subcategory, option, question]);
+                });
+                questionList.appendChild(button);
+            });
+        }
+
+   
+        async function fetchAnswer(path) {
+            try {
+                const response = await fetch('/get_answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    answerText.textContent = 'Error: ' + data.error;
+                } else {
+                    answerText.textContent = data.answer;
+                    answerSection.classList.remove('hidden');
+                }
+            } catch (error) {
+                answerText.textContent = 'Error fetching answer';
+                answerSection.classList.remove('hidden');
+            }
+        }
+
+
+        sendQuestion.addEventListener('click', async () => {
+            const question = userInput.value.trim();
+            if (!question) return;
+            try {
+                const response = await fetch('/ask_question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                const data = await response.json();
+                answerText.textContent = data.answer;
+                answerSection.classList.remove('hidden');
+                userInput.value = '';
+            } catch (error) {
+                answerText.textContent = 'Error processing question';
+                answerSection.classList.remove('hidden');
+            }
+        });
+
+        
+        populateCategories();
+    </script>
+</body>
+</html>
